@@ -3,11 +3,18 @@ var express_graphql = require('express-graphql');
 var { buildSchema } = require('graphql');
 const cors = require('cors')
 
+console.log("hi")
+var pg = require('pg')
+var conString = "postgres://prodigyadmin:xxxxxx@localhost:8080/apollo";
+var client = new pg.Client(conString);
+client.connect();
+
 // GraphQL schema
 var schema = buildSchema(`
     type Query {
         course(id: Int!): Course
         courses(topic: String): [Course]
+        loans(thing: Int): [Loan]
     },
     type Course {
         id: Int
@@ -16,7 +23,11 @@ var schema = buildSchema(`
         description: String
         topic: String
         url: String
-    }
+    },
+    type Loan {
+        applicationid: Int
+        userid: Int
+    },
 `);
 var coursesData = [
     {
@@ -58,9 +69,16 @@ var getCourses = function(args) {
         return coursesData;
     }
 }
+var getLoans = function(args) {
+    // return [{applicationId: 1, userId: 1}
+  rows = client.query("select application_id as applicationid, user_id as userid from dw.rpt_loantape limit 10")
+    .then(res => res.rows)
+  return rows
+}
 var root = {
     course: getCourse,
-    courses: getCourses
+    courses: getCourses,
+    loans: getLoans,
 };
 // Create an express server and a GraphQL endpoint
 var app = express();
